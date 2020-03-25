@@ -93,7 +93,7 @@ def move_head_down():
 
 def make_moves():
     move_head_around_booty()
-    move_head_down()
+    move_head_down() # TODO : figure out pourquoi on ne rentre pas dans le 2nd while
 
 
 make_moves()
