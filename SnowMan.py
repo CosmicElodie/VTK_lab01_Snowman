@@ -12,7 +12,8 @@ def build_sphere(radius, position):
     sphere.SetThetaResolution(25)
     sphere.SetPhiResolution(25)
     sphere.SetCenter(position)
-    return sphere
+    sphereT = vtk.vtkTransform()
+    return sphere, sphereT
 
 
 def build_cone(height, radius, resolution, position):
@@ -22,58 +23,36 @@ def build_cone(height, radius, resolution, position):
     cone.SetRadius(radius)
     cone.SetResolution(resolution)
     cone.SetCenter(position)
-    return cone
+    coneT = vtk.vtkTransform()
+    return cone, coneT
 
 
-head = build_sphere(1, (-3, 0, 0))
-left_eye = build_sphere(0.15, (-0.33, 2.3, 1))
-right_eye = build_sphere(0.15, (0.33, 2.3, 1))
-nose = build_cone(0.4, 0.12, 20, (3, 0, 0))
+(head, headT) = build_sphere(1.1, (-3, 0, 0))
+(left_eye, left_eye_T) = build_sphere(0.15, (-0.33, 2.5, 1))
+(right_eye, right_eye_T) = build_sphere(0.15, (0.33, 2.5, 1))
+(nose, noseT) = build_cone(0.4, 0.12, 20, (3, 0, 0))
 
-booty = build_sphere(1.5, (0, 0, 0))
-
-
-# ----------------------------------------------------------
-# FILTER OBJECTS
-# source 1 : https://www.programcreek.com/python/example/12960/vtk.vtkTransform
-# source 2 : https://vtk.org/Wiki/VTK/Examples/Python/RotationAroundLine
-# ----------------------------------------------------------
-def filter_object(object_to_modify, transformed_obj):
-    filtered_object = vtk.vtkTransformPolyDataFilter()
-    filtered_object.SetTransform(transformed_obj)
-    filtered_object.SetInputConnection(object_to_modify.GetOutputPort())
-    filtered_object.Update()
-    return transformed_obj, filtered_object
-
-
-(transformed_head, filtered_head) = filter_object(head, vtk.vtkTransform())
-(transformed_nose, filtered_nose) = filter_object(nose, vtk.vtkTransform())
-(transformed_booty, filtered_booty) = filter_object(booty, vtk.vtkTransform())
-(transformed_left_eye, filtered_left_eye) = filter_object(left_eye, vtk.vtkTransform())
-(transformed_right_eye, filtered_right_eye) = filter_object(right_eye, vtk.vtkTransform())
-
-transformed_head.PostMultiply()
-transformed_booty.PostMultiply()
-transformed_nose.PostMultiply()
+(booty, bootyT) = build_sphere(1.5, (0, 0, 0))
 
 
 # ----------------------------------------------------------
 # CREATE ACTOR
 # ----------------------------------------------------------
-def create_actor(outputPort, color):
+def create_actor(outputPort, color, object_transform):
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(outputPort)
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     actor.GetProperty().SetColor(color)
+    actor.SetUserTransform(object_transform)
     return actor
 
 
-head_actor = create_actor(filtered_head.GetOutputPort(), (1, 0.8, 1))
-booty_actor = create_actor(filtered_booty.GetOutputPort(), (1, 0.8, 1))
-nose_actor = create_actor(filtered_nose.GetOutputPort(), (1, 0.5, 0.1))
-left_eye_actor = create_actor(filtered_left_eye.GetOutputPort(), (0, 0, 0))
-right_eye_actor = create_actor(filtered_right_eye.GetOutputPort(), (0, 0, 0))
+head_actor = create_actor(head.GetOutputPort(), (1, 0.8, 1), headT)
+booty_actor = create_actor(booty.GetOutputPort(), (1, 0.8, 1), bootyT)
+nose_actor = create_actor(nose.GetOutputPort(), (1, 0.5, 0.1), noseT)
+left_eye_actor = create_actor(left_eye.GetOutputPort(), (0, 0, 0), left_eye_T)
+right_eye_actor = create_actor(right_eye.GetOutputPort(), (0, 0, 0), right_eye_T)
 
 # ----------------------------------------------------------
 # RENDER
@@ -96,6 +75,7 @@ camera.SetPosition(0, 0, 20)
 renWin = vtk.vtkRenderWindow()
 renWin.AddRenderer(renderer)
 renWin.SetSize(800, 600)
+renWin.Render()
 
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
@@ -106,28 +86,27 @@ iren.SetInteractorStyle(style)
 iren.Initialize()
 
 
-def move(range_limit, sec, function, function_parameters):
-    for i in range(0, range_limit):
+# ----------------------------------------------------------
+# ON BOUUUUGE
+# ----------------------------------------------------------
+def move(degrees, sec, function, function_parameters):
+    for i in range(0, degrees):
         time.sleep(sec)
         iren.Render()
         function(function_parameters)
 
 
-move(90, 0.03, transformed_head.RotateZ, -1)
-move(16, 0.07, transformed_head.Translate, (0, -0.05, 0))
+move(90, 0.03, headT.RotateZ, -1)  # tête tourne autour du corps
+move(15, 0.05, headT.Translate, (0.04, 0, 0))  # colle la tête au corps
 
-move(90, 0.03, transformed_nose.RotateY, -1)
-move(16, 0.03, transformed_nose.Translate, (0, 0, -0.05))
-move(90, 0.03, transformed_nose.RotateX, -1)
+move(90, 0.04, noseT.RotateY, -1)  # nez tourne autour du bonhomme
+move(6, 0.04, noseT.Translate, (0, -0.1, 0))  # TODO : avance nez vers bonhomme
+move(90, 0.04, noseT.RotateZ, 1)  # rotation nez vers la tête
+move(22, 0.1, noseT.Translate, (0, -0.053, 0))  # avancer nez hors de la tête
+renderer.AddActor(left_eye_actor)  # faire apparaitre les yeux
+renderer.AddActor(right_eye_actor)  # faire apparaitre les yeux
 
-move(3, 0.03, transformed_nose.Translate, (0, -0.05, 0))
-move(22, 0.03, transformed_nose.Translate, (0, 0, 0.05))
-move(4, 0.03, transformed_nose.Translate, (0, 0.01, 0))
-
-renderer.AddActor(left_eye_actor)
-renderer.AddActor(right_eye_actor)
-
-move(360, 0.02, camera.Roll, 1)
-move(360, 0.02, camera.Azimuth, 1)
-move(90, 0.02, camera.Elevation, 1)
-move(90, 0.02, camera.Elevation, -1)
+move(360, 0.015, camera.Roll, 1)
+move(360, 0.015, camera.Azimuth, 1)
+move(90, 0.015, camera.Elevation, 1)
+move(90, 0.015, camera.Elevation, -1)
