@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------
+# Laboratoire 1 - SnowMan
+# Crüll Loris, Lagier Elodie
+# ----------------------------------------------------------
+
 import time
 import vtk
 
@@ -100,11 +104,12 @@ move(90, 0.03, headT.RotateZ, -1)  # tête tourne autour du corps
 move(15, 0.05, headT.Translate, (0.04, 0, 0))  # colle la tête au corps
 
 move(90, 0.04, noseT.RotateY, -1)  # nez tourne autour du bonhomme
-move(6, 0.04, noseT.Translate, (0, -0.1, 0))  # TODO : avance nez vers bonhomme
+move(20, 0.04, noseT.Translate, (-0.05, 0, 0))  # avance nez vers bonhomme
 move(90, 0.04, noseT.RotateZ, 1)  # rotation nez vers la tête
-move(22, 0.1, noseT.Translate, (0, -0.053, 0))  # avancer nez hors de la tête
-renderer.AddActor(left_eye_actor)  # faire apparaitre les yeux
-renderer.AddActor(right_eye_actor)  # faire apparaitre les yeux
+move(40, 0, noseT.Translate, (-0.017, 0, 0))  # descend nez
+move(40, 0.02, noseT.Translate, (0, -0.053, 0))  # avance nez hors de la tête
+renderer.AddActor(left_eye_actor)  # fait apparaitre les yeux
+renderer.AddActor(right_eye_actor)  # fait apparaitre les yeux
 
 move(360, 0.015, camera.Roll, 1)
 move(360, 0.015, camera.Azimuth, 1)
